@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, ForeignKey, select
+from sqlalchemy import create_engine, ForeignKey, select, func
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker, relationship, Mapped, mapped_column
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
@@ -96,6 +96,62 @@ def get_user_details() -> tuple:
     
     return name_i, birth_date_i, address_i, postal_code_i
 
+def add_author():
+    
+    name_i = get_valid_input("Full name: ", validators.validate_user_name)
+    birth_date_i = get_valid_input("Birth date, format DD/MM/YYYY: ", validators.validate_birth_date)
+    query = select(Author).where(func.lower(Author.name) == name_i.lower())
+    result = session.execute(query).scalar_one_or_none()
+
+    if result:
+        print("Name already in the database.")
+        return
+
+    try:
+        author = Author(
+            name=name_i,
+            birth_date=birth_date_i
+        )
+        session.add(author)
+        session.commit()
+    except SQLAlchemyError as e:
+        session.rollback()
+        print(f"Error, the author hasn't been added.{e}")
+
+def add_book():
+    
+    title_i = get_valid_input("Ttile of the book: ", validators.validate_title)
+    pages_i = get_valid_input("Number of pages: ", validators.validate_pages)
+    pages_i_int = int(pages_i)
+    author_name_i = input("Author's name: ").strip()
+
+    if not author_name_i:
+        print("Author's name cannot be empty.")
+        return
+
+    query = select(Author).where(Author.name == author_name_i)
+    author = session.execute(query).scalar_one_or_none()
+
+    if author is None:
+        print("Author doesn't exist in the database. Add author first.")
+        return
+
+    author_id_result = author.id
+
+    try:
+        book = Book(
+            title=title_i,
+            pages=pages_i_int,
+            author_id=author_id_result
+        )
+        session.add(book)
+        session.commit()
+        print("Book added successfully.")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print(f"Error, the book hasn't been added to the database.{e}")
+
+
 def create_account(model):
     while True:
         login_i = get_valid_input("Login: ", validators.validate_login)
@@ -165,6 +221,14 @@ while True:
             login_user()
         elif worker_user == '2':
             login_worker()
+            while True:
+                choice = input("What do you want to do? 1.Add author 2.Add book \q = quit")
+                if choice == '1':
+                    add_author()
+                elif choice == '2':
+                    add_book()
+                elif choice == "\q":
+                    break
 
     #REGISTER AS USER OR WORKER
     elif login_register == '2':

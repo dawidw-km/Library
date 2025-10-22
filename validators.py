@@ -42,6 +42,20 @@ def validate_password(password: str) ->bool:
     return True
 
 
+def validate_title(title: str) ->bool:
+    """
+    Validate title. Ensures it's not empty, doesn't contain special characters. Makes sure it is at least 2 and 150 characters.
+    """
+    if not title.strip():
+        print("Title cannot be empty, please type correct title.")
+        return False
+    if len(title) < 2 or len(title) > 150:
+        print("Title must be between 2 and 150 characters.")
+        return False
+    if re.search(r"[@$!%*#?&]", title):
+        print("Name cannot contain special characters.")
+        return False
+
 def validate_user_name(name: str) ->bool:
     """
     Validate user's full name. Ensures it doesn't contain special characters or numbers. Makes sure it is at least 2 and 150 characters.
