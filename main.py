@@ -1,9 +1,7 @@
-from sqlalchemy import create_engine, String, Integer, Float, ForeignKey, select
+from sqlalchemy import create_engine, ForeignKey, select
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker, relationship, Mapped, mapped_column
 from sqlalchemy.exc import SQLAlchemyError
-from pydantic import BaseModel, field_validator, ValidationError
 from typing import List, Optional
-import bcrypt
 import validators, security
 
 engine = create_engine("postgresql+psycopg2://postgres@localhost:5432/test_db", echo=True)
