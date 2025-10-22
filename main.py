@@ -120,7 +120,14 @@ def add_author():
 
 def add_book():
     
-    title_i = get_valid_input("Ttile of the book: ", validators.validate_title)
+    title_i = get_valid_input("Title of the book: ", validators.validate_title)
+    query_title = select(Book).where(Book.title == title_i)
+    title_result = session.execute(query_title).scalars().first()
+
+    if title_result:
+        print("Title already in the database.")
+        return
+
     pages_i = get_valid_input("Number of pages: ", validators.validate_pages)
     pages_i_int = int(pages_i)
     author_name_i = input("Author's name: ").strip()
@@ -188,31 +195,43 @@ def new_user():
 def new_worker():
     create_account(Worker)
 
+
 def login_as(model):
     login_input = input("Login: ")
     password_input = input("Password: ")
 
-    query_check = select(model).where(model.login == login_input)
-    result = session.execute(query_check).scalar_one_or_none()
+    if not login_input or not password_input:
+        print("Login and password cannot be empty!")
+        return False
+
+    login_query = select(model).where(model.login == login_input)
+    result = session.execute(login_query).scalar_one_or_none()
+
+    if result is None:
+        print("No account was found with that login.")
+        return False
 
     hashed_pw = result.password
 
-    security.verify_password(password_input, hashed_pw)
+    is_valid = security.verify_password(password_input, hashed_pw)
 
-    if security.verify_password(password_input, hashed_pw):
-        print("Done")
+    if is_valid:
+        print(f"Login successful, welcome {result.name}!")
+        return True
     else:
         print("Invalid login or password.")
+        return False
+    
 
 def login_user():
-    login_as(User)
+    return login_as(User)
 
 def login_worker():
-    login_as(Worker)
+    return login_as(Worker)
 
 while True:
     #ASK WHAT DO YOU WANT TO DO
-    login_register = input("1.Login 2.Register \q Exit: ")
+    login_register = input("1.Login 2.Register or type 'exit': ")
 
     #LOGIN AS USER OR WORKER
     if login_register == '1':
@@ -220,15 +239,16 @@ while True:
         if worker_user == '1':
             login_user()
         elif worker_user == '2':
-            login_worker()
-            while True:
-                choice = input("What do you want to do? 1.Add author 2.Add book \q = quit")
-                if choice == '1':
-                    add_author()
-                elif choice == '2':
-                    add_book()
-                elif choice == "\q":
-                    break
+            logged_in_worker = login_worker()
+            if logged_in_worker:
+                while True:
+                    choice = input("What do you want to do? 1.Add author 2.Add book or type 'exit': ")
+                    if choice == '1':
+                        add_author()
+                    elif choice == '2':
+                        add_book()
+                    elif choice == "exit":
+                        break
 
     #REGISTER AS USER OR WORKER
     elif login_register == '2':
@@ -239,6 +259,6 @@ while True:
             new_worker()
 
     #BREAKS THE LOOP
-    elif login_register == '\q':
+    elif login_register == 'exit':
         break
 

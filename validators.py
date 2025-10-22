@@ -24,6 +24,9 @@ def validate_password(password: str) ->bool:
     """
     Validate user's password. Ensures it contains lowercase and uppercase letter, special character and a number. It must be between 8 and 18 characters.
     """
+    if not password:
+        print("Password cannot be empty!")
+        return False
     if len(password) <8 or len(password) >18:
         print("Password must be between 8 to 18 characters.")
         return False
@@ -55,6 +58,25 @@ def validate_title(title: str) ->bool:
     if re.search(r"[@$!%*#?&]", title):
         print("Name cannot contain special characters.")
         return False
+    return True
+
+
+def validate_pages(pages: str) ->bool:
+    """
+    Validate pages in a book. Ensure it's not empty and it contains only numbers and is max 4 characters.
+    """
+    if not pages.strip():
+        print("It cannot be empty, put a number of pages.")
+        return False
+    if len(pages) > 4:
+        print("It cannot be longer than 4 chracters.")
+        return False
+    if not re.search(r"^\d+$", pages):
+        print("Pages can contain only numbers.")
+        return False
+    return True
+    
+
 
 def validate_user_name(name: str) ->bool:
     """
