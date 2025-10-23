@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 import validators, security
 
-engine = create_engine("postgresql+psycopg2://postgres@localhost:5432/test_db", echo=True)
+engine = create_engine("postgresql+psycopg2://postgres@localhost:5432/test_db")
 
 class Base(DeclarativeBase):
     pass
@@ -71,23 +71,22 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-def get_valid_input(prompt: str, validator_func, existing_user=None) ->str:
+
+def get_valid_input(prompt: str, validator_func, *args) ->str:
     """
-    Collects user input and takes validator.
+    Collects user input and uses the provided validator.
     """
     while True:
         value = input(prompt)
-        if existing_user is not None:
-            valid = validator_func(value, existing_user)
-        else:
-            valid = validator_func(value)
-        if valid:
+        is_valid, message = validator_func(value, *args)
+        if is_valid:
             return value
-        print("Try again\n")
+        print(message)
+        
 
 def get_user_details() -> tuple:
     """
-    Collects user inforomation (Name, Birth date, Address, Postal code) and validates input.
+    Collects user information (Name, Birth Date, Address, Postal code) and validates input.
     """
     name_i = get_valid_input("Full name: ", validators.validate_user_name)
     birth_date_i = get_valid_input("Birth date format(DD/MM/YYYY): ", validators.validate_birth_date)
@@ -97,7 +96,9 @@ def get_user_details() -> tuple:
     return name_i, birth_date_i, address_i, postal_code_i
 
 def add_author():
-    
+    """
+    Adds new author to the database. Ensure there's no duplicate of the author.
+    """
     name_i = get_valid_input("Full name: ", validators.validate_user_name)
     birth_date_i = get_valid_input("Birth date, format DD/MM/YYYY: ", validators.validate_birth_date)
     query = select(Author).where(func.lower(Author.name) == name_i.lower())
@@ -106,7 +107,7 @@ def add_author():
     if result:
         print("Name already in the database.")
         return
-
+    
     try:
         author = Author(
             name=name_i,
@@ -119,7 +120,9 @@ def add_author():
         print(f"Error, the author hasn't been added.{e}")
 
 def add_book():
-    
+    """
+    Adds new book to the database. Ensure there's no duplcate and makes sure that author is already in the database.
+    """
     title_i = get_valid_input("Title of the book: ", validators.validate_title)
     query_title = select(Book).where(Book.title == title_i)
     title_result = session.execute(query_title).scalars().first()
@@ -160,6 +163,11 @@ def add_book():
 
 
 def create_account(model):
+    """
+    Model to create an account for a user or a worker.
+    Ensure that an account doesn't already exist in the database.
+    Secures password with bcrypt.
+    """
     while True:
         login_i = get_valid_input("Login: ", validators.validate_login)
         existing_user = session.execute(select(Worker).where(Worker.login == login_i)).scalar_one_or_none()
@@ -197,6 +205,11 @@ def new_worker():
 
 
 def login_as(model):
+    """
+    Model to log in as a worker or a user.
+    Ensure that pw and login are correct.
+    Decrypts password.
+    """
     login_input = input("Login: ")
     password_input = input("Password: ")
 
